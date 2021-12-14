@@ -3,24 +3,19 @@
 namespace Kernel;
 
 use App\Exception\Handler;
+use Kernel\Interfaces\RouterInterface;
 
 class Application
 {
-    private $server;
-    private $router;
-
-    public function __construct()
+    public function __construct(private RouterInterface $router, private string $requestUri)
     {
-        $this->server = $_SERVER;
-
-        $this->router = new Router();
-        require_once __DIR__ . "/../app/Routes/web.php";
+        $this->configRouter();
     }
 
     public function run()
     {
         try {
-            $routeInfo = $this->router->getRouteInfo($this->normalizeUri($this->server['REQUEST_URI']));
+            $routeInfo = $this->router->getRouteInfo($this->normalizeUri($this->requestUri));
 
             return call_user_func_array(
                 [
@@ -32,6 +27,11 @@ class Application
         } catch (\Exception $exception) {
             throw new Handler($exception);
         }
+    }
+
+    private function configRouter()
+    {
+        require_once __DIR__ . "/../app/Routes/web.php";
     }
 
     private function normalizeUri(string $url): string

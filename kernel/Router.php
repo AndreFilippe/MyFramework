@@ -3,12 +3,13 @@
 namespace Kernel;
 
 use Kernel\Enums\Regex;
+use Kernel\Interfaces\RouterInterface;
 
-class Router
+class Router implements RouterInterface
 {
     private array $routes;
 
-    public function get(string $uri, string $controller, string $method)
+    public function get(string $uri, string $controller, string $method): void
     {
         $this->routes[$uri] = [
             'method' => 'GET',
