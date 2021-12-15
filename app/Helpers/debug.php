@@ -1,12 +1,12 @@
 <?php
 
 if (!function_exists('dd')) {
-    function dd($data, $isDie = true)
+    function dd()
     {
         echo "<pre>";
-        var_dump($data);
+        var_dump(func_get_args());
         echo "</pre>";
 
-        if ($isDie) die;
+        die;
     }
 }
