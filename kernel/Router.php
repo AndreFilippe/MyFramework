@@ -7,7 +7,7 @@ use Kernel\Interfaces\RouterInterface;
 
 class Router implements RouterInterface
 {
-    private array $routes;
+    private array $routes = [];
 
     public function get(string $uri, string $controller, string $method): void
     {
@@ -21,14 +21,14 @@ class Router implements RouterInterface
 
     public function getRouteInfo(string $uri): array
     {
-        if (empty($uri)) return $this->normalizeRouteInfo($uri, $uri);
+        if (empty($uri) && isset($this->routes[$uri])) return $this->normalizeRouteInfo($uri, $uri);
 
         foreach ($this->routes as $key => $route) {
             $regex = $route['regex'];
             if (is_null($regex)) continue;
-
             if (preg_match($regex, $uri)) return $this->normalizeRouteInfo($key, $uri);
         }
+
 
         throw new \Exception("Route not found", 404);
     }
@@ -40,14 +40,23 @@ class Router implements RouterInterface
         $backslashAdjusted = preg_replace(Regex::BACKSLASH, Regex::BACKSLASH_IN_REGEX, $uri);
         $paramsAdjusted = preg_replace(Regex::FORMAT_PARAM, "+" . Regex::LETTERS_NUMBERS . "+", $backslashAdjusted);
 
+        if (substr($paramsAdjusted, 0, 1) === '+') {
+            $paramsAdjusted = substr($paramsAdjusted, 1, -1);
+        }
 
-        $limit = substr($paramsAdjusted, -1) === '+' ? -1 : null;
-        return "/" . substr($paramsAdjusted, 1, $limit) . "/";
+        if (substr($paramsAdjusted, -1) === '+') {
+            $paramsAdjusted = substr($paramsAdjusted, 0, -1);
+        }
+
+        return "/$paramsAdjusted/";
     }
 
     private function normalizeRouteInfo($uri, $inputUri): array
     {
-        return [...$this->routes[$uri], 'params' => $this->getParams($uri, $inputUri)];
+        return [
+            ...$this->routes[$uri],
+            'params' => $this->getParams($uri, $inputUri)
+        ];
     }
 
     private function getParams($uri, $inputUri)
