@@ -2,89 +2,49 @@
 
 namespace Kernel;
 
-use Kernel\Enums\Regex;
+use Kernel\Exceptions\RouteNotFoundException;
 use Kernel\Interfaces\RouterInterface;
 
 class Router implements RouterInterface
 {
     private array $routes = [];
 
-    public function get(string $uri, string $controller, string $method): void
+    public function request(string $method, string $uri, string $controller, string $action): void
     {
-        $this->routes[$uri] = [
-            'method' => 'GET',
-            'regex' => $this->generateRegexUri($uri),
-            'controller' => $controller,
-            'action' => $method
-        ];
+        $this->routes[$method][$uri] = new Route($uri, $controller, $action);
     }
 
-    public function getRouteInfo(string $uri): array
+    public function get(string $uri, string $controller, string $action): void
     {
-        if (empty($uri) && isset($this->routes[$uri])) return $this->normalizeRouteInfo($uri, $uri);
-
-        foreach ($this->routes as $key => $route) {
-            $regex = $route['regex'];
-            if (is_null($regex)) continue;
-            if (preg_match($regex, $uri)) return $this->normalizeRouteInfo($key, $uri);
-        }
-
-
-        throw new \Exception("Route not found", 404);
+        $this->request('GET', $uri, $controller, $action);
     }
 
-    private function generateRegexUri(string $uri): ?string
+    public function post(string $uri, string $controller, string $action): void
     {
-        if (empty($uri)) return null;
-
-        $backslashAdjusted = preg_replace(Regex::BACKSLASH, Regex::BACKSLASH_IN_REGEX, $uri);
-        $paramsAdjusted = preg_replace(Regex::FORMAT_PARAM, "+" . Regex::LETTERS_NUMBERS . "+", $backslashAdjusted);
-
-        if (substr($paramsAdjusted, 0, 1) === '+') {
-            $paramsAdjusted = substr($paramsAdjusted, 1, -1);
-        }
-
-        if (substr($paramsAdjusted, -1) === '+') {
-            $paramsAdjusted = substr($paramsAdjusted, 0, -1);
-        }
-
-        return "/$paramsAdjusted/";
+        $this->request('POST', $uri, $controller, $action);
     }
 
-    private function normalizeRouteInfo($uri, $inputUri): array
+    public function put(string $uri, string $controller, string $action): void
     {
-        return [
-            ...$this->routes[$uri],
-            'params' => $this->getParams($uri, $inputUri)
-        ];
+        $this->request('PUT', $uri, $controller, $action);
     }
 
-    private function getParams($uri, $inputUri)
+    public function patch(string $uri, string $controller, string $action): void
     {
-        $splitInputUri = explode('/', $inputUri);
-        $params = $this->getParamPositions($uri);
-
-        foreach ($params as $key => $param) {
-            $paramValues[$param] = $splitInputUri[$key];
-        }
-
-        return $paramValues ?? [];
+        $this->request('PATCH', $uri, $controller, $action);
     }
 
-    private function getParamPositions($uri): array
+    public function delete(string $uri, string $controller, string $action): void
     {
-        $splitUri = explode('/', $uri);
-
-        $paramPositions = preg_grep(Regex::FORMAT_PARAM, $splitUri);
-
-        return array_map(
-            fn ($postion) => $this->removeParamLimit($postion),
-            $paramPositions
-        );
+        $this->request('DELETE', $uri, $controller, $action);
     }
 
-    private function removeParamLimit(string $params): string
+    public function getRoute(Request $request): Route
     {
-        return str_replace([Regex::PARAM_START, Regex::PARAM_END], '', $params);
+        $routeByMethod = $this->routes[$request->method] ?? throw new RouteNotFoundException();
+
+        $routes = array_filter($routeByMethod, fn ($route) => $route->isMatch($request->uri));
+
+        return !empty($routes) ? reset($routes) : throw new RouteNotFoundException();
     }
 }
