@@ -1,9 +1,12 @@
 <?php
 
 use Kernel\Application;
+use Kernel\Request;
 use Kernel\Router;
 
 require __DIR__ . '/../config/bootstrap.php';
 
 $router = new Router();
-(new Application($router, $_SERVER['REQUEST_URI']))->run();
+$request = (new Request())->build();
+
+(new Application($router, $request))->run();

@@ -7,7 +7,7 @@ use Kernel\Interfaces\RouterInterface;
 
 class Application
 {
-    public function __construct(private RouterInterface $router, private string $requestUri)
+    public function __construct(private RouterInterface $router, private Request $request)
     {
         $this->configRouter();
     }
@@ -15,15 +15,8 @@ class Application
     public function run()
     {
         try {
-            $routeInfo = $this->router->getRouteInfo($this->normalizeUri($this->requestUri));
-
-            return call_user_func_array(
-                [
-                    new $routeInfo['controller'],
-                    $routeInfo['action']
-                ],
-                $routeInfo['params']
-            );
+            $route = $this->router->getRoute($this->request);
+            $route->run($this->request);
         } catch (\Exception $exception) {
             throw new Handler($exception);
         }
@@ -32,11 +25,5 @@ class Application
     private function configRouter()
     {
         require_once __DIR__ . "/../app/Routes/web.php";
-    }
-
-    private function normalizeUri(string $url): string
-    {
-        $limit = substr($url, -1) === '/' ? -1 : null;
-        return substr($url, 1, $limit);
     }
 }
