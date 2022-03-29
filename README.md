@@ -1,3 +1,3 @@
 # MyFramework
 
-Estou criando um framework estudar.
+Estou criando um framework para estudar OO and DDD.
