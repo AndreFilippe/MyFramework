@@ -14,8 +14,8 @@ class HomeController
         dd($id);
     }
 
-    public function mult($oder_id, $package_id)
+    public function mult($id, $bar_id)
     {
-        dd([$oder_id, $package_id]);
+        dd([$id, $bar_id]);
     }
 }
