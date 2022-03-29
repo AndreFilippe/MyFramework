@@ -2,6 +2,8 @@
 
 namespace App\Controllers;
 
+use Kernel\Request;
+
 class HomeController
 {
     public function home()
@@ -14,8 +16,8 @@ class HomeController
         dd($id);
     }
 
-    public function mult($id, $bar_id)
+    public function mult($id, $bar_id, Request $request)
     {
-        dd([$id, $bar_id]);
+        dd([$id, $bar_id, $request]);
     }
 }

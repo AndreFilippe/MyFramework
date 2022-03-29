@@ -21,7 +21,7 @@ class Route
 
     public function run(Request $request)
     {
-        $this->setParams($request->uri);
+        $this->setParams($request);
 
         return call_user_func_array(
             [
@@ -37,21 +37,35 @@ class Route
         return boolval(preg_match($this->regex, $uriResquest));
     }
 
+    private function injectRequest(array $params, Request $request): array
+    {
+        $parameters = (new \ReflectionMethod($this->controller, $this->action))->getParameters();
+
+        $isAddRequest = boolval(array_filter($parameters, fn ($parameter) => $parameter?->getType()?->getName() === Request::class));
+        if ($isAddRequest) {
+            return [
+                ...$params,
+                'request' => $request
+            ];
+        }
+        return $params;
+    }
+
     private function setUri(string $uri)
     {
         $this->uri = empty(trim($uri)) ? '/' : $uri;
     }
 
-    private function setParams(string $uriResquest)
+    private function setParams(Request $request)
     {
-        $splitInputUri = explode('/', $uriResquest);
+        $splitInputUri = explode('/', $request->uri);
         $params = $this->getParamPositions($this->uri);
-
+        $paramValues = [];
         foreach ($params as $key => $param) {
             $paramValues[$param] = $splitInputUri[$key];
         }
 
-        $this->params = $paramValues ?? [];
+        $this->params = $this->injectRequest($paramValues, $request);
     }
 
     private function setRegex()
